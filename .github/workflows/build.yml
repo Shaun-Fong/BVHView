@@ -1,0 +1,47 @@
+name: Build
+
+on:
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v3
+
+      - name: Install MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          install: >-
+            mingw-w64-x86_64-gcc
+            make
+            git
+
+      - name: Set up folder structure
+        shell: bash
+        run: |
+          mkdir -p /c/raylib
+          cd /c/raylib
+          git clone --depth=1 https://github.com/raysan5/raylib.git
+          git clone --depth=1 https://github.com/raysan5/raygui.git
+
+      - name: Build raylib
+        shell: msys2 {0}
+        run: |
+          cd /c/raylib/raylib/src
+          make PLATFORM=PLATFORM_DESKTOP
+
+      - name: Build bvhview.exe
+        shell: msys2 {0}
+        run: |
+          cd $GITHUB_WORKSPACE
+          make BUILD_MODE=RELEASE
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: bvhview.exe
+          path: bvhview.exe
