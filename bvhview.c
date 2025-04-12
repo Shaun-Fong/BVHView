@@ -3457,8 +3457,8 @@ static inline void GuiOrbitCamera(OrbitCamera* camera, CharacterData* characterD
 {
     GuiGroupBox((Rectangle){ 20, 10, 190, 260 }, "Camera");
 
-    GuiLabel((Rectangle){ 30, 20, 150, 20 }, "Ctrl + Left Click - Rotate");
-    GuiLabel((Rectangle){ 30, 40, 150, 20 }, "Ctrl + Right Click - Pan");
+    GuiLabel((Rectangle){ 30, 20, 150, 20 }, "Middle Hold - Rotate");
+    GuiLabel((Rectangle){ 30, 40, 150, 20 }, "Shift + Middle - Pan");
     GuiLabel((Rectangle){ 30, 60, 150, 20 }, "Mouse Scroll - Zoom");
     GuiLabel((Rectangle){ 30, 80, 150, 20 }, TextFormat("Target: [% 5.3f % 5.3f % 5.3f]", camera->cam3d.target.x, camera->cam3d.target.y, camera->cam3d.target.z));
     GuiLabel((Rectangle){ 30, 100, 150, 20 }, TextFormat("Offset: [% 5.3f % 5.3f % 5.3f]", camera->offset.x, camera->offset.y, camera->offset.z));
@@ -3950,16 +3950,31 @@ static void ApplicationUpdate(void* voidApplicationState)
 
     if (!app->fileDialogState.windowActive)
     {
+        Vector2 mouseDelta = GetMouseDelta();
+
+        // 鼠标输入状态
+        bool middleMouse = IsMouseButtonDown(MOUSE_BUTTON_MIDDLE);
+        bool shiftHeld   = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
+
+        // 中键单独控制旋转
+        float rotX = middleMouse && !shiftHeld ? mouseDelta.x : 0.0f;
+        float rotY = middleMouse && !shiftHeld ? mouseDelta.y : 0.0f;
+    
+        // Shift + 中键控制平移
+        float panX = (middleMouse && shiftHeld) ? mouseDelta.x : 0.0f;
+        float panY = (middleMouse && shiftHeld) ? mouseDelta.y : 0.0f;
+
         OrbitCameraUpdate(
             &app->camera,
             cameraTarget,
-            (IsKeyDown(KEY_LEFT_CONTROL) && IsMouseButtonDown(0)) ? GetMouseDelta().x : 0.0f,
-            (IsKeyDown(KEY_LEFT_CONTROL) && IsMouseButtonDown(0)) ? GetMouseDelta().y : 0.0f,
-            (IsKeyDown(KEY_LEFT_CONTROL) && IsMouseButtonDown(1)) ? GetMouseDelta().x : 0.0f,
-            (IsKeyDown(KEY_LEFT_CONTROL) && IsMouseButtonDown(1)) ? GetMouseDelta().y : 0.0f,
-            GetMouseWheelMove(),
+            rotX,  // 水平旋转
+            rotY,  // 垂直旋转
+            panX,  // 平移 X
+            panY,  // 平移 Y
+            GetMouseWheelMove(),  // 缩放
             GetFrameTime());
     }
+
 
     // Create Capsules
 
